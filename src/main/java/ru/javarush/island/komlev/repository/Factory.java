@@ -6,6 +6,6 @@ import ru.javarush.island.komlev.etnity.organizms.Organism;
 import java.util.List;
 
 public interface Factory {
-    Cell createRandomCell(boolean empty);
+    Cell createRandomCell();
     List<Organism> getAllPrototypes();
 }

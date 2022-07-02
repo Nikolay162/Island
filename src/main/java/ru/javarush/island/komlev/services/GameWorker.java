@@ -1,8 +1,10 @@
 package ru.javarush.island.komlev.services;
 
 import ru.javarush.island.komlev.etnity.Game;
+import ru.javarush.island.komlev.etnity.organizms.Organism;
 import ru.javarush.island.komlev.view.View;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -13,40 +15,37 @@ public class GameWorker extends Thread{
     public static final int PERIOD = 1000;
     private final Game game;
 
-    public GameWorker(Game game) {
-        this.game = game;
-    }
-
     @Override
     public void run() {
-        View view = game.getView();
-        view.showMap();
-        view.showStatistics();
-        ScheduledExecutorService executorService = Executors.newScheduledThreadPool(8);
-        List<OrganismWorker> workers = game
-                .getEntityFactory()
-                .getAllPrototypes()
-                .stream()
-                .map(o -> new OrganismWorker(o,game.getGameMap()))
-                .toList();
+        ScheduledExecutorService executorService = Executors.newScheduledThreadPool(4);
+        List<OrganismWorker> workers = new ArrayList<>();
+        for (Organism germ : game.getEntityFactory().getAllPrototypes()) {
+            OrganismWorker orgWorker = new OrganismWorker(germ, game.getGameMap());
+            workers.add(orgWorker);
+        }
         executorService.scheduleAtFixedRate(new Runnable() {
             @Override
             public void run() {
-                ExecutorService service = Executors.newFixedThreadPool(8);
-                workers.forEach(service::submit);
-                service.shutdown();
+                ExecutorService servicePool = Executors.newFixedThreadPool(4);
+                for (OrganismWorker worker : workers) {
+                    servicePool.submit(worker);
+                }
+                servicePool.shutdown();
                 try {
-                    if (service.awaitTermination(PERIOD, TimeUnit.MILLISECONDS)) {
-                    view.showMap();
-                    view.showStatistics();
+                    if(servicePool.awaitTermination(PERIOD, TimeUnit.MILLISECONDS)) {
+                        game.getView().showMap();
+                        game.getView().showStatistics();
                     }
-                } catch (InterruptedException e) {
+                }catch (InterruptedException e){
                     throw new RuntimeException(e);
                 }
             }
-        },
-                PERIOD,
-                PERIOD,
-                TimeUnit.MILLISECONDS);
+        }, PERIOD,PERIOD, TimeUnit.MILLISECONDS);
+    }
+
+    public GameWorker(Game game) {
+        this.game = game;
+
+
     }
 }

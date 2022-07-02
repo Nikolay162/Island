@@ -3,7 +3,7 @@ import ru.javarush.island.komlev.abstraction.interfaces.Reproducible;
 
 import java.util.concurrent.atomic.AtomicLong;
 
-public abstract class Organism implements Reproducible {
+public abstract class Organism implements Reproducible, Cloneable {
     //паспорт животного
     private final static AtomicLong idCounter = new AtomicLong(System.currentTimeMillis());
     private final long id = idCounter.incrementAndGet();

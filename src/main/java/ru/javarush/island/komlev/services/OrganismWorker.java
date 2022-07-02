@@ -14,7 +14,6 @@ import java.util.concurrent.ConcurrentLinkedDeque;
 public class OrganismWorker implements Runnable {
     private final Organism germ;
     private final GameMap gameMap;
-    private final Queue<Task> tasks = new ConcurrentLinkedDeque<>();
 
     public OrganismWorker(Organism germ, GameMap gameMap) {
         this.germ = germ;
@@ -28,28 +27,14 @@ public class OrganismWorker implements Runnable {
             for (Cell cell : row) {
                 Type type = germ.getClass();
                 Set<Organism> organisms = cell.getResidents().get(type);
-                if (Objects.nonNull(organisms)) {
-                    cell.getLock().lock();
-                    try {
-                        for (Organism organism : organisms) {
-                            Task task = new Task(organism, o -> {
-                                o.spawn(cell);
-                                if (organism instanceof Animal animal) {
-                                    animal.eat(cell);
-                                    animal.move(cell);
-                                }
-                            });
-                            tasks.add(task);
-                        }
-                    } finally {
-                        cell.getLock().unlock();
+                for (Organism organism : organisms) {
+                    if (organism instanceof Animal animal) {
+                        animal.eat(cell);
+                        animal.move(cell);
+                    } else {
+                        germ.spawn(cell);
                     }
-                    for (Task task : tasks) {
-                        task.run();
-                    }
-                    tasks.clear();
                 }
-
             }
         }
 
